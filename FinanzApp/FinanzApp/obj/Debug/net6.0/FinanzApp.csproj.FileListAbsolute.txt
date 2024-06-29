@@ -111,3 +111,4 @@ C:\Users\agusa\FinanzApp\FinanzApp\FinanzApp\bin\Debug\net6.0\Microsoft.AspNetCo
 C:\Users\agusa\FinanzApp\FinanzApp\FinanzApp\bin\Debug\net6.0\Newtonsoft.Json.dll
 C:\Users\agusa\FinanzApp\FinanzApp\FinanzApp\bin\Debug\net6.0\Serilog.dll
 C:\Users\agusa\FinanzApp\FinanzApp\FinanzApp\bin\Debug\net6.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\agusa\FinanzApp\FinanzApp\FinanzApp\obj\Debug\net6.0\FinanzApp.sourcelink.json

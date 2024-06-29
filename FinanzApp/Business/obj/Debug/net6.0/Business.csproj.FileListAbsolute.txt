@@ -15,3 +15,4 @@ C:\Users\agusa\FinanzApp\FinanzApp\Business\obj\Debug\net6.0\Business.dll
 C:\Users\agusa\FinanzApp\FinanzApp\Business\obj\Debug\net6.0\refint\Business.dll
 C:\Users\agusa\FinanzApp\FinanzApp\Business\obj\Debug\net6.0\Business.pdb
 C:\Users\agusa\FinanzApp\FinanzApp\Business\obj\Debug\net6.0\ref\Business.dll
+C:\Users\agusa\FinanzApp\FinanzApp\Business\obj\Debug\net6.0\Business.sourcelink.json

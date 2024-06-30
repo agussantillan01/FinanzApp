@@ -13,7 +13,7 @@ namespace Infrastructure.Configuration
 
             builder.Property(x => x.Nombre).HasColumnName("Nombre").HasColumnType("varchar").HasMaxLength(500).IsRequired();
             builder.Property(x => x.Apellido).HasColumnName("Apellido").HasColumnType("varchar").HasMaxLength(500).IsRequired();
-            builder.Property(x => x.Password).HasColumnName("Contraseña").HasColumnType("varchar").IsRequired();
+            builder.Property(x => x.Password).HasColumnName("Password").HasColumnType("varchar").IsRequired();
             builder.Property(x => x.UserName).HasColumnName("UserName").HasMaxLength(500).HasColumnType("varchar").IsRequired();
             builder.Property(x => x.NormalizedUserName).HasColumnName("NormalizedUserName").HasColumnType("varchar").HasMaxLength(500).IsRequired();
             builder.Property(x => x.ConcurrencyStamp).HasColumnName("ConcurrencyStamp").HasColumnType("varchar").IsRequired();

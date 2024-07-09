@@ -22,6 +22,14 @@ namespace FinanzApp.Controllers
             return (IAccountService)Ok(await _accountService.AuthenticateAsync(request, GenerateIPAdress()));
         }
 
+        [HttpPost("Register")]
+        public async Task<IActionResult> RegisterAsync(RegisterRequest request)
+        {
+            var origin = Request.Headers["origin"];
+            return Ok(await _accountService.RegisterAsync(request, origin));
+        }
+
+
 
         #region FuncionesPrivadas 
         private string GenerateIPAdress() {

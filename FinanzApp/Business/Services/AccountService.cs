@@ -8,6 +8,7 @@ using Infrastructure.DBConnection;
 using Infrastructure.Helpers;
 using Infrastructure.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -25,7 +26,7 @@ namespace Business.Services
         #region atributos 
         private readonly IActiveDirectoryManager _activeDirectoryManager;
         private readonly JWTSettings _jwtSetting;
-        private readonly Microsoft.AspNetCore.Identity.UserManager<UsuarioLogin> _userManager;
+        private readonly UserManager<UsuarioLogin> _userManager;
         private readonly ApplicationDbContext _ApplicationDbContext;
         private readonly SignInManager<UsuarioLogin> _SingInManager;
         #endregion
@@ -46,6 +47,8 @@ namespace Business.Services
         #endregion
         public async Task<Response<AuthenticationResponse>> AuthenticateAsync(AuthenticationRequest request, string ipAddress)
         {
+
+            var users = await _ApplicationDbContext.Usuarios.ToListAsync();
             var user = await GetUsuario(request);
             JwtSecurityToken jwtSecurityToken = await GenerateJWToken(user);
             //var refreshToken = GenerateRefreshToken(ipAddress, user.Id);
@@ -115,10 +118,20 @@ namespace Business.Services
             {
                 throw new ApiException("Email y/o contraseña incorrecta");
             }
-            //await validarLogin(request, user);
+            await validarLogin(request, user);
             return us;
         }
 
+        private async Task validarLogin(AuthenticationRequest request, UsuarioLogin usuario)
+        {
+            if (!_activeDirectoryManager.UsaActiveDirectory(usuario.NormalizedUserName)){
+                var result = await _SingInManager.CheckPasswordSignInAsync(usuario, request.Password, lockoutOnFailure: false);
+                if (!result.Succeeded)
+                {
+                    throw new ApiException("Usuario y/o contraseña incorrecta.");
+                }
+            }
+        }
         public Task<UsuarioLogin> GetUsuarioXId(int id)
         {
             throw new NotImplementedException();
@@ -129,9 +142,30 @@ namespace Business.Services
             throw new NotImplementedException();
         }
 
-        public Task<Response<string>> RegisterAsync(RegisterRequest request, string origin)
+        public async Task<Response<string>> RegisterAsync(RegisterRequest request, string origin)
         {
-            throw new NotImplementedException();
+            var userWithSameUserName = await _userManager.FindByNameAsync(request.UserName);
+            if(userWithSameUserName != null) {
+                throw new ApiException($"El nombre de usuario '{request.UserName}' ya se encuentra tomado.");
+            }
+            var user = new UsuarioLogin
+            {
+                Email = request.Email,
+                Password = request.Password,
+                Nombre = request.FirstName,
+                Apellido = request.LastName,
+                UserName = request.UserName, 
+                NormalizedEmail = request.Email.ToUpper(), 
+                NormalizedUserName = request.UserName.ToUpper()
+            };
+
+
+            user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, request.Password);
+            var result = await _userManager.CreateAsync(user, request.Password);
+            if (result.Succeeded)
+                return new Response<string>(user.Id.ToString(), message: $"Usuario registrado.");
+            else
+                throw new ApiException($"{result.Errors}");
         }
 
         public Task<Response<string>> ResetPassword(ResetPasswordRequest model)

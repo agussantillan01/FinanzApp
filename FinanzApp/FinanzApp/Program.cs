@@ -20,9 +20,12 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Domain.Wrappers;
-using Newtonsoft.Json; // Asegúrate de tener esto para los logs
+using Newtonsoft.Json;
+using System.Text; // Asegúrate de tener esto para los logs
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -32,6 +35,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("IdentityConnection")));
 builder.Services.AddBusinessLayer();
+
+builder.Services.AddSingleton<JWTSettings>(); // O el ciclo de vida adecuado para tu aplicación
+
 builder.Services.Configure<JWTSettings>(builder.Configuration.GetSection("JWTSettings"));
 builder.Services.AddScoped<IAunthenticatedUserService, AuthenticatedUserService>();
 //builder.Services.AddIdentity<UsuarioLogin, IdentityRole<int>>() // Asegúrate de usar el tipo correcto para UsuarioLogin
@@ -53,20 +59,38 @@ builder.Services.AddIdentity<UsuarioLogin, Grupo>(x =>
             //.AddRoleStore<ApplicationRoleStore>()
             .AddDefaultTokenProviders();
 
-builder.Services.AddScoped<IApplicationUserStore, ApplicationUserStore>();
 builder.Services.AddTransient<IActiveDirectoryManager, ActiveDirectoryManager>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserService, UserService>();
 
-builder.Services.AddTransient<IConexion>(c => new SQLDBConnection("Server=DESKTOP-UMTV5OF\\SQLEXPRESS;database=DB_FinanzApp;Integrated Security=true"));
+//  MULTIEMPRESA: VER QUE LA CONNECTION STRING DEBERÁ SER DINÁMICA CUANDO SE DEBA INCORPORAR LA FUNCIONALIDAD MULTIEMPRESA EN EL VISUALIZADOR
+//  POR LO QUE EL CÓDIGO CAMBIARÁ A FUTURO.
+builder.Services.AddTransient<IConexion>(c => new SQLDBConnection("Password=sadtjat;Persist Security Info=False;User ID=smsbrowse;Initial Catalog=XM_APDES;Data Source=SMS036DESA\\MSSQLSERVER2014;MultipleActiveResultSets=true;TrustServerCertificate=true"));
 
+//builder.Services.AddTransient<IPasswordHasher<UsuarioLogin>, CustomPasswordHasher>();
 
-builder.Services.Configure<JWTSettings>(builder.Configuration.GetSection("JWTSettings"));
+//builder.Services.AddSwaggerGen(options =>
+//{
+//    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+//    {
+//        In = ParameterLocation.Header,
+//        Name = "Authorization",
+//        Type = SecuritySchemeType.ApiKey
+//    });
 
-// Registrar JWTSettings como una instancia Singleton
-builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<JWTSettings>>().Value);
-
-
+//    options.OperationFilter<SecurityRequirementsOperationFilter>();
+//});
+//builder.Services.AddAuthentication().AddJwtBearer(options =>
+//{
+//    options.TokenValidationParameters = new TokenValidationParameters
+//    {
+//        ValidateIssuerSigningKey = true,
+//        ValidateAudience = false,
+//        ValidateIssuer = false,
+//        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+//                builder.Configuration.GetSection("appsettings:Token").Value!))
+//    };
+//});
 builder.Services.AddSwaggerGen(c =>
 {
     //c.IncludeXmlComments(string.Format(@"{0}\ERP.WebApi.xml", System.AppDomain.CurrentDomain.BaseDirectory));
@@ -110,8 +134,8 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
                 .AddJwtBearer(o =>
@@ -127,7 +151,7 @@ builder.Services.AddAuthentication(options =>
                         ClockSkew = TimeSpan.Zero,
                         ValidIssuer = builder.Configuration["JWTSettings:Issuer"],
                         ValidAudience = builder.Configuration["JWTSettings:Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWTSettings:Key"]))
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWTSettings:Key"]))
                     };
                     o.Events = new JwtBearerEvents()
                     {

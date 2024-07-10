@@ -34,7 +34,7 @@ namespace Business.Services
         #region Constructor
         public AccountService(ApplicationDbContext ApplicationDbContext,
                                 IActiveDirectoryManager activeDirectoryManager,
-                                Microsoft.AspNetCore.Identity.UserManager<UsuarioLogin> userManager,
+                                UserManager<UsuarioLogin> userManager,
                                 JWTSettings jwtSetting,
                                 SignInManager<UsuarioLogin> SingInManager)
         {
@@ -111,24 +111,26 @@ namespace Business.Services
 
         public async Task<UsuarioLogin> GetUsuario(AuthenticationRequest request)
         {
-            UsuarioLogin us = new UsuarioLogin();
-
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
                 throw new ApiException("Email y/o contraseña incorrecta");
             }
             await validarLogin(request, user);
-            return us;
+            return user;
         }
 
         private async Task validarLogin(AuthenticationRequest request, UsuarioLogin usuario)
         {
             if (!_activeDirectoryManager.UsaActiveDirectory(usuario.NormalizedUserName)){
-                var result = await _SingInManager.CheckPasswordSignInAsync(usuario, request.Password, lockoutOnFailure: false);
+                var result = await _SingInManager.CheckPasswordSignInAsync(usuario, request.Password.Trim(), lockoutOnFailure: false);
                 if (!result.Succeeded)
                 {
                     throw new ApiException("Usuario y/o contraseña incorrecta.");
+                }
+                else
+                {
+                    _activeDirectoryManager.Login(usuario.Email, request.Password);
                 }
             }
         }
@@ -151,7 +153,6 @@ namespace Business.Services
             var user = new UsuarioLogin
             {
                 Email = request.Email,
-                Password = request.Password,
                 Nombre = request.FirstName,
                 Apellido = request.LastName,
                 UserName = request.UserName, 

@@ -17,9 +17,9 @@ namespace FinanzApp.Controllers
             _configuration = configuration;
         }
         [HttpPost("Authenticate")]
-        public async Task<IAccountService> Authenticate(AuthenticationRequest request)
+        public async Task<IActionResult> Authenticate(AuthenticationRequest request)
         {
-            return (IAccountService)Ok(await _accountService.AuthenticateAsync(request, GenerateIPAdress()));
+            return Ok(await _accountService.AuthenticateAsync(request, GenerateIPAdress()));
         }
 
         [HttpPost("Register")]

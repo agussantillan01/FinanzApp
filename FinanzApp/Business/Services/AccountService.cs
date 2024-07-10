@@ -1,6 +1,7 @@
 ﻿using Business.DTOs.Account;
 using Business.Exceptions;
 using Business.Interfaces;
+using Domain.EntitiesIdentity;
 using Domain.Settings;
 using Domain.Wrappers;
 using Infrastructure.CustomIdentity.Interface;
@@ -16,6 +17,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -35,13 +37,13 @@ namespace Business.Services
         public AccountService(ApplicationDbContext ApplicationDbContext,
                                 IActiveDirectoryManager activeDirectoryManager,
                                 UserManager<UsuarioLogin> userManager,
-                                JWTSettings jwtSetting,
+                                IOptions<JWTSettings> jwtSetting,
                                 SignInManager<UsuarioLogin> SingInManager)
         {
             _activeDirectoryManager = activeDirectoryManager;
             _ApplicationDbContext = ApplicationDbContext;
             _userManager = userManager;
-            _jwtSetting = jwtSetting;
+            _jwtSetting = jwtSetting.Value;
             _SingInManager = SingInManager;
         }
         #endregion
@@ -51,16 +53,16 @@ namespace Business.Services
             var users = await _ApplicationDbContext.Usuarios.ToListAsync();
             var user = await GetUsuario(request);
             JwtSecurityToken jwtSecurityToken = await GenerateJWToken(user);
-            //var refreshToken = GenerateRefreshToken(ipAddress, user.Id);
-            //await UpdateRefreshToken(refreshToken);
+            var refreshToken = GenerateRefreshToken(ipAddress, user.Id);
+            await UpdateRefreshToken(refreshToken);
 
             AuthenticationResponse response = new AuthenticationResponse();
             response.Id = user.Id.ToString();
             response.Email = user.Email;
             response.IsVerified = true;// user.EmailConfirmed;
-            //response.RefreshToken = refreshToken.Token;
-            //response.JWToken = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
-            //response.ExpireDate = jwtSecurityToken.ValidTo.ToLocalTime();
+            response.RefreshToken = refreshToken.Token;
+            response.JWToken = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
+            response.ExpireDate = jwtSecurityToken.ValidTo.ToLocalTime();
 
             return new Response<AuthenticationResponse>(response, $"{user.Email.Trim()} autenticado");
         }
@@ -99,6 +101,29 @@ namespace Business.Services
             throw new NotImplementedException();
         }
 
+
+        private async Task UpdateRefreshToken(RefreshToken refreshToken, string ultimoToken = "")
+        {
+            //var vencidos = await _ApplicationDbContext.RefreshTokens = 
+        }
+        private RefreshToken GenerateRefreshToken(string ipAdress, int user)
+        {
+            return new RefreshToken
+            {
+                Token = RandomTokenStrin(),
+                Expires = DateTime.UtcNow.AddDays(7),
+                Created = DateTime.UtcNow,
+                UsuarioId = user,
+                CreatedByIp = ipAdress
+            };
+        }
+        private string RandomTokenStrin()
+        {
+            using var rngCryptoServiceProvider = new RNGCryptoServiceProvider();
+            var randomBytes = new byte[40];
+            rngCryptoServiceProvider.GetBytes(randomBytes);
+            return BitConverter.ToString(randomBytes).Replace("-", "");
+        }
         public Task ForgotPassword(ForgotPasswordRequest model, string origin)
         {
             throw new NotImplementedException();
@@ -128,10 +153,11 @@ namespace Business.Services
                 {
                     throw new ApiException("Usuario y/o contraseña incorrecta.");
                 }
-                else
-                {
-                    _activeDirectoryManager.Login(usuario.Email, request.Password);
-                }
+
+            }
+            else
+            {
+                _activeDirectoryManager.Login(usuario.Email, request.Password);
             }
         }
         public Task<UsuarioLogin> GetUsuarioXId(int id)

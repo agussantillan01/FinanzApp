@@ -174,7 +174,7 @@ namespace Business.Services
         {
             var userWithSameUserName = await _userManager.FindByNameAsync(request.UserName);
             if(userWithSameUserName != null) {
-                throw new ApiException($"El nombre de usuario '{request.UserName}' ya se encuentra tomado.");
+                throw new ApiException($"El mail '{request.UserName}' ya se encuentra tomado.");
             }
             var user = new UsuarioLogin
             {
